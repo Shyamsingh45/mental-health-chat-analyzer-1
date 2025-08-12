@@ -1,0 +1,11 @@
+streamlit
+pandas
+plotly
+seaborn
+wordcloud
+textblob
+nltk
+reportlab
+python-dotenv
+openai
+kaleido
