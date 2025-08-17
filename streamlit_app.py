@@ -38,12 +38,12 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-st.title("🧠 Advanced Mental Health Detection from WhatsApp Chat")
-st.caption("Upload an exported WhatsApp .txt to analyze emotions, trends and get AI support.")
+st.title("🧠 Advanced Mental Health Detection And Analysis from Chat")
+st.caption("Upload an exported Chat .txt to analyze emotions, trends and get AI support.")
 
 # Sidebar
 st.sidebar.header("🔧 Settings & Upload")
-uploaded_file = st.sidebar.file_uploader("Upload WhatsApp chat (.txt)", type=['txt'])
+uploaded_file = st.sidebar.file_uploader("Upload chat (.txt)", type=['txt'])
 use_hinglish = st.sidebar.checkbox("Translate Hinglish → English", value=True)
 use_transformer = st.sidebar.checkbox("Use Transformer-based classifier (optional)", value=False)
 use_openai = st.sidebar.checkbox("Enable OpenAI Chatbot (set OPENAI_API_KEY in .env)", value=False)
