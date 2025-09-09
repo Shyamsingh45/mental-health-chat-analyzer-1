@@ -10,4 +10,4 @@ python-dotenv
 openai
 kaleido
 gtts
-speech_recognition
+SpeechRecognition
