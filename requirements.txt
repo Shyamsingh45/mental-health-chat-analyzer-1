@@ -9,3 +9,4 @@ reportlab
 python-dotenv
 openai
 kaleido
+gtts
