@@ -7,7 +7,6 @@ from emotion_trend import ensure_date_emotion,plot_emotion_trend_plotly,save_emo
 from chatbot_response import generate_response
 from intent_detector import detect_intent
 from utils.hinglish_translation import translate_hinglish_to_english
-from voice_utils import tts_gtts, record_audio_to_text
 from generate_pdf_report import generate_pdf_report
 from utils.hinglish_translation import translate_hinglish_to_english
 from export_utils import export_excel, export_png_bundle, make_zip_bundle
@@ -183,73 +182,47 @@ with tab2:
     else:
         st.info("Upload a chat to see insights.")
 
+# --- Tab 3: Chatbot ---
 with tab3:
-    st.header("💬 AI Chatbot (Supportive) — Text & Voice")
-    if 'history' not in st.session_state:
-        st.session_state.history = []
+    st.header("💬 AI Chatbot (Offline Mode)")
 
-    # Voice input
-    st.markdown("**Voice Input** — click to record from your mic (local only).")
-    if st.button("🎙️ Record & Transcribe (local)"):
+    if 'chat_history' not in st.session_state:
+        st.session_state.chat_history = []
+
+    user_input = st.text_input("Type your message here...")
+
+    if st.button("Send") and user_input.strip():
         try:
-            st.info("Recording... please speak (will listen up to 10s).")
-            text = record_audio_to_text(timeout=5, phrase_time_limit=10)
-            if text:
-                st.success("Transcription: " + text)
-                user_input = text
-            else:
-                st.warning("Could not transcribe audio.")
-                user_input = ""
+            from chatbot_response import generate_response
+
+            # Detect emotion from Tab 1 data if available
+            emotion_detected = None
+            if 'df' in st.session_state and 'Emotion' in st.session_state.df.columns:
+                try:
+                    emotion_detected = st.session_state.df['Emotion'].iloc[-1]
+                except IndexError:
+                    pass
+
+            # Generate bot reply (offline)
+            bot_reply = generate_response(
+                user_input=user_input,
+                emotion=emotion_detected,
+                history=st.session_state.chat_history
+            )
+
+            # Save to chat history
+            st.session_state.chat_history.append((user_input, bot_reply))
+
         except Exception as e:
-            st.error(f"Recording error: {e}")
-            user_input = ""
-    else:
-        user_input = st.text_input("How are you feeling? (type or use Voice)", key="chat_text")
+            st.error(f"⚠️ Error in chatbot: {e}")
 
-    # If you used Hinglish translation option earlier, you may translate here:
-    if user_input and use_hinglish:
-        user_input_proc = translate_hinglish_to_english(user_input)
-    else:
-        user_input_proc = user_input
+    # Display conversation
+    if st.session_state.chat_history:
+        st.markdown("### Conversation")
+        for user_msg, bot_msg in st.session_state.chat_history:
+            st.markdown(f"**You:** {user_msg}")
+            st.markdown(f"**Bot:** {bot_msg}")
 
-    if user_input_proc:
-        context_emotion = None
-        if 'df' in st.session_state and not st.session_state.df.empty:
-            context_emotion = st.session_state.df['emotion'].mode().iloc[0]
-
-        # Choose whether to use OpenAI (auto-enabled only if env var exists)
-        openai_key = os.getenv("OPENAI_API_KEY")
-        use_openai_flag = bool(openai_key)  # or let user toggle via checkbox
-
-        try:
-            reply = generate_response(user_input_proc,
-                                      use_openai=use_openai_flag,
-                                      emotion=context_emotion,
-                                      history=st.session_state.history)
-        except Exception as e:
-            reply = "Sorry, chatbot unavailable: " + str(e)
-
-        st.session_state.history.append((user_input_proc, reply))
-        st.markdown(f"**Bot:** {reply}")
-
-        # TTS: generate mp3 and play
-        try:
-            mp3_path = tts_gtts(reply, lang='en')
-            audio_file = open(mp3_path, "rb").read()
-            st.audio(audio_file, format='audio/mp3')
-        except Exception as e:
-            st.warning("TTS failed: " + str(e))
-
-        intent = detect_intent(user_input_proc)
-        if intent:
-            st.error(f"⚠️ Detected urgent intent: {intent}")
-
-    # show history
-    if st.session_state.history:
-        st.subheader("Conversation Memory (recent)")
-        for u, r in st.session_state.history[::-1]:
-            st.markdown(f"**You:** {u}")
-            st.markdown(f"**Bot:** {r}")
 with tab4:
     st.header("Export & Report")
     if 'df' in st.session_state:
