@@ -11,3 +11,4 @@ openai
 kaleido
 gtts
 SpeechRecognition
+openpyxl
